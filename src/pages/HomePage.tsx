@@ -335,66 +335,6 @@ export function HomePage() {
               Featured Causal Chain
             </h2>
           </div>
-          <p style={{
-            fontSize: 14,
-            lineHeight: 1.6,
-            color: 'var(--text-secondary)',
-            marginBottom: 24,
-          }}>
-            From the Treaty of Versailles to the atomic age — trace how one decision
-            cascaded through decades, reshaping the world.
-          </p>
-
-          {/* Type legend */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: 8,
-          }}>
-            {[
-              { type: 'decision', desc: 'Strategic choices made by leaders' },
-              { type: 'fact', desc: 'Verified historical events' },
-              { type: 'convention', desc: 'Military doctrines & patterns' },
-              { type: 'state', desc: 'Regime changes & turning points' },
-            ].map(item => (
-              <div key={item.type} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                padding: '10px 12px',
-                background: 'var(--bg-secondary)',
-                borderRadius: 'var(--radius)',
-                border: '1px solid var(--border)',
-              }}>
-                <div style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: getTypeColor(item.type),
-                  flexShrink: 0,
-                  marginTop: 4,
-                }} />
-                <div>
-                  <div style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: getTypeColor(item.type),
-                    textTransform: 'capitalize',
-                    marginBottom: 2,
-                  }}>
-                    {item.type}
-                  </div>
-                  <div style={{
-                    fontSize: 11,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.4,
-                  }}>
-                    {item.desc}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{
