@@ -1,0 +1,26 @@
+{
+  "id": "wars",
+  "name": "Wars & Conflicts",
+  "description": "5,000 years of military history structured as knowledge traces — decisions, facts, conventions, and state changes that shaped the world.",
+  "icon": "\u2694\ufe0f",
+  "tag_taxonomy": {
+    "era": {
+      "label": "Era",
+      "values": ["ancient", "medieval", "early-modern", "modern", "contemporary"]
+    },
+    "region": {
+      "label": "Region",
+      "values": ["europe", "asia", "middle-east", "pacific", "americas", "africa", "mediterranean"]
+    },
+    "domain": {
+      "label": "Domain",
+      "values": ["naval", "land", "air", "intelligence", "logistics", "diplomacy", "nuclear", "guerrilla"]
+    }
+  },
+  "categories": [
+    { "slug": "world-wars/ww1", "name": "World War I", "path": "world-wars/ww1.json", "trace_count": 25 },
+    { "slug": "world-wars/ww2", "name": "World War II", "path": "world-wars/ww2.json", "trace_count": 42 },
+    { "slug": "ancient/greco-persian", "name": "Greco-Persian Wars", "path": "ancient/greco-persian.json", "trace_count": 16 },
+    { "slug": "cold-war/vietnam", "name": "Vietnam War", "path": "cold-war/vietnam.json", "trace_count": 16 }
+  ]
+}
