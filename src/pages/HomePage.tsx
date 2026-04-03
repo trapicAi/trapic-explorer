@@ -319,22 +319,6 @@ export function HomePage() {
         alignItems: 'start',
       }}>
         <div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 16,
-          }}>
-            <GitBranch size={16} style={{ color: 'var(--accent)' }} />
-            <h2 style={{
-              fontSize: 20,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
-            }}>
-              Featured Causal Chain
-            </h2>
-          </div>
         </div>
 
         <div style={{
