@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { loadAllTraces, getAllTags, getTagCounts, filterByTags, filterByType, searchTraces, getDatasetMeta } from '@/lib/data';
 import type { ExplorerTrace, DatasetMeta } from '@/types/trace';
 import { Timeline } from '@/components/Timeline';
@@ -148,6 +148,18 @@ export function ExplorePage() {
         flexWrap: isMobile ? 'wrap' : 'nowrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/" style={{
+            fontSize: 24,
+            textDecoration: 'none',
+            opacity: 0.6,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; }}
+          title="Switch dataset"
+          >
+            ←
+          </Link>
           <span style={{ fontSize: 24 }}>{meta?.icon}</span>
           <div>
             <h1 style={{
