@@ -1,5 +1,6 @@
 import type { ExplorerTrace } from '@/types/trace';
 import { getTypeColor } from '@/lib/data';
+import { getTypeLabel } from '@/lib/typeLabels';
 import { useRef, useCallback } from 'react';
 
 interface TimelineProps {
@@ -202,7 +203,7 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
               background: getTypeColor(type),
               flexShrink: 0,
             }} />
-            {type}
+            {getTypeLabel(type)}
           </div>
         ))}
       </div>

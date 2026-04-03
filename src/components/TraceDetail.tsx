@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ExplorerTrace } from '@/types/trace';
 import { getTraceById, getTypeColor, getChainForTrace } from '@/lib/data';
+import { getTypeLabel } from '@/lib/typeLabels';
 import { X, GitBranch, ArrowRight, Shield } from 'lucide-react';
 import { CausalChainMini } from './CausalChain';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -89,7 +90,7 @@ export function TraceDetail({ trace, datasetId, onClose }: TraceDetailProps) {
               color: typeColor,
               background: `color-mix(in srgb, ${typeColor} 12%, transparent)`,
             }}>
-              {trace.type}
+              {getTypeLabel(trace.type)}
             </span>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               {formatDate(trace.date_start, trace.year_numeric)}

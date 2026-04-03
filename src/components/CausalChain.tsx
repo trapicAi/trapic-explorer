@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ExplorerTrace } from '@/types/trace';
 import { getTypeColor } from '@/lib/data';
+import { getTypeLabel } from '@/lib/typeLabels';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface CausalChainMiniProps {
@@ -231,7 +232,7 @@ export function CausalChainFull({ chain, highlightId, datasetId }: CausalChainFu
                     color: typeColor,
                     background: `color-mix(in srgb, ${typeColor} 12%, transparent)`,
                   }}>
-                    {trace.type}
+                    {getTypeLabel(trace.type)}
                   </span>
                   <span style={{
                     fontSize: 11,

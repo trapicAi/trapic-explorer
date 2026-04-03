@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { loadAllTraces, getAllTags, getTagCounts, filterByTags, filterByType, searchTraces, getDatasetMeta, getChainForTrace } from '@/lib/data';
+import { getTypeLabel } from '@/lib/typeLabels';
 import type { ExplorerTrace, DatasetMeta } from '@/types/trace';
 import { Timeline } from '@/components/Timeline';
 import { TagTree } from '@/components/TagTree';
 import { TraceCard, CausalArrow } from '@/components/TraceCard';
-import { TraceDetail } from '@/components/TraceDetail';
 import { Filter, X, GitBranch, LayoutGrid } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -35,10 +35,10 @@ export function ExplorePage() {
 
   const [allTraces, setAllTraces] = useState<ExplorerTrace[]>([]);
   const [meta, setMeta] = useState<DatasetMeta | null>(null);
+  const navigate = useNavigate();
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
-  const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
-  const [expandedTraceId, setExpandedTraceId] = useState<string | null>(null);
+  const [activeTraceId, setActiveTraceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
@@ -108,18 +108,10 @@ export function ExplorePage() {
   }, []);
 
   const handleTimelineClick = useCallback((traceId: string) => {
-    setSelectedTraceId(traceId);
-    const el = document.getElementById(`trace-${traceId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    setExpandedTraceId(traceId);
-  }, []);
+    setActiveTraceId(traceId);
+    navigate(`/d/${dataset}/trace/${traceId}`);
+  }, [dataset, navigate]);
 
-  const selectedTrace = useMemo(() => {
-    if (!selectedTraceId) return null;
-    return allTraces.find(t => t.id === selectedTraceId) || null;
-  }, [selectedTraceId, allTraces]);
 
   if (loading) {
     return (
@@ -247,7 +239,7 @@ export function ExplorePage() {
                   background: color,
                   opacity: isActive ? 1 : 0.4,
                 }} />
-                {type}
+                {getTypeLabel(type)}
               </button>
             );
           })}
@@ -426,10 +418,6 @@ export function ExplorePage() {
                   <TraceCard
                     trace={trace}
                     datasetId={dataset || 'wars'}
-                    isExpanded={expandedTraceId === trace.id}
-                    onExpand={() => setExpandedTraceId(
-                      expandedTraceId === trace.id ? null : trace.id
-                    )}
                     isTracePath={pathTraceIds.has(trace.id)}
                   />
                   {i < tracePathChain.length - 1 && (
@@ -457,10 +445,6 @@ export function ExplorePage() {
                   key={trace.id}
                   trace={trace}
                   datasetId={dataset || 'wars'}
-                  isExpanded={expandedTraceId === trace.id}
-                  onExpand={() => setExpandedTraceId(
-                    expandedTraceId === trace.id ? null : trace.id
-                  )}
                   isTracePath={viewMode === 'trace-path' && pathTraceIds.has(trace.id)}
                 />
               ))}
@@ -481,7 +465,7 @@ export function ExplorePage() {
                 <Timeline
                   traces={filteredTraces}
                   onTraceClick={handleTimelineClick}
-                  activeTraceId={expandedTraceId || undefined}
+                  activeTraceId={activeTraceId || undefined}
                 />
               </div>
             </div>
@@ -489,14 +473,6 @@ export function ExplorePage() {
         </div>
       </div>
 
-      {/* Detail panel */}
-      {selectedTrace && (
-        <TraceDetail
-          trace={selectedTrace}
-          datasetId={dataset || 'wars'}
-          onClose={() => setSelectedTraceId(null)}
-        />
-      )}
     </div>
   );
 }

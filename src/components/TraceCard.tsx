@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { ExplorerTrace } from '@/types/trace';
 import { getTypeColor, getCausesCount, getEffectsCount } from '@/lib/data';
+import { getTypeLabel } from '@/lib/typeLabels';
 import { GitBranch, Crosshair, BarChart3, BookOpen, Zap } from 'lucide-react';
 
 interface TraceCardProps {
@@ -47,14 +48,20 @@ function getGlowClass(type: string): string {
 }
 
 export function TraceCard({ trace, datasetId, isExpanded, onExpand, isTracePath }: TraceCardProps) {
+  const navigate = useNavigate();
   const causes = getCausesCount(trace.id);
   const effects = getEffectsCount(trace.id);
   const typeColor = getTypeColor(trace.type);
 
+  const handleClick = () => {
+    // Navigate to full trace page
+    navigate(`/d/${datasetId}/trace/${trace.id}`);
+  };
+
   return (
     <div
       id={`trace-${trace.id}`}
-      onClick={onExpand}
+      onClick={handleClick}
       className={`animate-fade-in glass-card${isExpanded || isTracePath ? ` ${getGlowClass(trace.type)}` : ''}`}
       style={{
         position: 'relative',
@@ -99,7 +106,7 @@ export function TraceCard({ trace, datasetId, isExpanded, onExpand, isTracePath 
             }}
           >
             {getTypeIcon(trace.type)}
-            {trace.type}
+            {getTypeLabel(trace.type)}
           </span>
           {(causes > 0 || effects > 0) && (
             <span className="mono" style={{
