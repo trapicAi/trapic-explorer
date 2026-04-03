@@ -4,6 +4,7 @@ import { ArrowRight, GitBranch, Database, Layers } from 'lucide-react';
 import { getDatasets, loadAllTraces, getChainForTrace } from '@/lib/data';
 import type { ExplorerTrace } from '@/types/trace';
 import { getTypeColor } from '@/lib/data';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 function AnimatedCounter({ target, label, delay }: { target: string; label: string; delay: number }) {
   const [visible, setVisible] = useState(false);
@@ -145,6 +146,7 @@ export function HomePage() {
   const [featuredChain, setFeaturedChain] = useState<ExplorerTrace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     async function load() {
@@ -213,7 +215,7 @@ export function HomePage() {
     <div style={{ flex: 1 }}>
       {/* Hero */}
       <section style={{
-        padding: '80px 24px 60px',
+        padding: isMobile ? '48px 16px 40px' : '80px 24px 60px',
         textAlign: 'center',
         background: `radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 70%)`,
       }}>
@@ -239,7 +241,7 @@ export function HomePage() {
           </div>
 
           <h1 style={{
-            fontSize: 48,
+            fontSize: isMobile ? 32 : 48,
             fontWeight: 700,
             letterSpacing: '-0.03em',
             lineHeight: 1.15,
@@ -252,7 +254,7 @@ export function HomePage() {
           </h1>
 
           <p style={{
-            fontSize: 17,
+            fontSize: isMobile ? 15 : 17,
             lineHeight: 1.6,
             color: 'var(--text-secondary)',
             maxWidth: 540,
@@ -266,8 +268,9 @@ export function HomePage() {
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: 48,
+            gap: isMobile ? 24 : 48,
             marginBottom: 40,
+            flexWrap: 'wrap',
           }}>
             <AnimatedCounter target={`${traceCount}+`} label="Traces" delay={200} />
             <AnimatedCounter target="4" label="Conflicts" delay={400} />
@@ -309,10 +312,10 @@ export function HomePage() {
       <section style={{
         maxWidth: 1100,
         margin: '0 auto',
-        padding: '40px 24px 60px',
+        padding: isMobile ? '24px 16px 40px' : '40px 24px 60px',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 40,
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? 24 : 40,
         alignItems: 'start',
       }}>
         <div>
@@ -345,7 +348,7 @@ export function HomePage() {
           {/* Type legend */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
             gap: 8,
           }}>
             {[
@@ -409,7 +412,7 @@ export function HomePage() {
       <section style={{
         maxWidth: 1100,
         margin: '0 auto',
-        padding: '0 24px 60px',
+        padding: isMobile ? '0 16px 40px' : '0 24px 60px',
       }}>
         <div style={{
           display: 'flex',
@@ -430,7 +433,7 @@ export function HomePage() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
           gap: 16,
         }}>
           {datasets.map(ds => (

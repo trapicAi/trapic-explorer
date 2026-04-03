@@ -71,7 +71,7 @@ export function TracePage() {
       <div style={{
         maxWidth: 800,
         margin: '0 auto',
-        padding: '24px 24px 60px',
+        padding: '24px 16px 60px',
       }}>
         {/* Breadcrumb */}
         <Link

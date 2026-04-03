@@ -3,6 +3,7 @@ import type { ExplorerTrace } from '@/types/trace';
 import { getTraceById, getTypeColor, getChainForTrace } from '@/lib/data';
 import { X, GitBranch, ArrowRight, Shield } from 'lucide-react';
 import { CausalChainMini } from './CausalChain';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface TraceDetailProps {
   trace: ExplorerTrace;
@@ -30,6 +31,7 @@ export function TraceDetail({ trace, datasetId, onClose }: TraceDetailProps) {
   const effects = chain.filter(t =>
     t.id !== trace.id && t.caused_by.includes(trace.id)
   );
+  const isMobile = useIsMobile();
 
   return (
     <div style={{
@@ -37,18 +39,20 @@ export function TraceDetail({ trace, datasetId, onClose }: TraceDetailProps) {
       inset: 0,
       zIndex: 200,
       display: 'flex',
-      justifyContent: 'flex-end',
+      justifyContent: isMobile ? 'stretch' : 'flex-end',
     }}>
       {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(4px)',
-        }}
-      />
+      {!isMobile && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+          }}
+        />
+      )}
 
       {/* Panel */}
       <div
@@ -56,9 +60,9 @@ export function TraceDetail({ trace, datasetId, onClose }: TraceDetailProps) {
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 560,
+          maxWidth: isMobile ? '100%' : 560,
           background: 'var(--bg-primary)',
-          borderLeft: '1px solid var(--border)',
+          borderLeft: isMobile ? 'none' : '1px solid var(--border)',
           overflowY: 'auto',
           boxShadow: 'var(--shadow-lg)',
         }}
@@ -94,8 +98,8 @@ export function TraceDetail({ trace, datasetId, onClose }: TraceDetailProps) {
           <button
             onClick={onClose}
             style={{
-              width: 28,
-              height: 28,
+              width: 44,
+              height: 44,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -103,14 +107,14 @@ export function TraceDetail({ trace, datasetId, onClose }: TraceDetailProps) {
               color: 'var(--text-muted)',
             }}
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: isMobile ? 16 : 20 }}>
           {/* Content */}
           <h2 style={{
-            fontSize: 18,
+            fontSize: isMobile ? 16 : 18,
             fontWeight: 600,
             lineHeight: 1.4,
             color: 'var(--text-primary)',

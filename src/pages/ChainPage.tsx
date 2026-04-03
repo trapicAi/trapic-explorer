@@ -47,7 +47,7 @@ export function ChainPage() {
       <div style={{
         maxWidth: 900,
         margin: '0 auto',
-        padding: '24px 24px 60px',
+        padding: '24px 16px 60px',
       }}>
         {/* Breadcrumb */}
         <div style={{

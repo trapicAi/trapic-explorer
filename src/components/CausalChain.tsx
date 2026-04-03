@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ExplorerTrace } from '@/types/trace';
 import { getTypeColor } from '@/lib/data';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface CausalChainMiniProps {
   chain: ExplorerTrace[];
@@ -121,13 +122,15 @@ export function CausalChainMini({ chain, highlightId, datasetId }: CausalChainMi
 }
 
 export function CausalChainFull({ chain, highlightId, datasetId }: CausalChainFullProps) {
+  const isMobile = useIsMobile();
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       gap: 0,
-      maxWidth: 800,
+      maxWidth: isMobile ? '100%' : 800,
       margin: '0 auto',
+      padding: isMobile ? '0 8px' : 0,
     }}>
       {chain.map((trace, i) => {
         const isHighlighted = trace.id === highlightId;

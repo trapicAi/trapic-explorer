@@ -6,12 +6,14 @@ import { Timeline } from '@/components/Timeline';
 import { TagTree } from '@/components/TagTree';
 import { TraceCard } from '@/components/TraceCard';
 import { TraceDetail } from '@/components/TraceDetail';
-import { Filter } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 export function ExplorePage() {
   const { dataset } = useParams<{ dataset: string }>();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
+  const isMobile = useIsMobile();
 
   const [allTraces, setAllTraces] = useState<ExplorerTrace[]>([]);
   const [meta, setMeta] = useState<DatasetMeta | null>(null);
@@ -21,7 +23,13 @@ export function ExplorePage() {
   const [expandedTraceId, setExpandedTraceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  // Close sidebar when switching to mobile
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+    else setSidebarOpen(true);
+  }, [isMobile]);
 
   useEffect(() => {
     if (!dataset) return;
@@ -131,18 +139,19 @@ export function ExplorePage() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Dataset header */}
       <div style={{
-        padding: '12px 24px',
+        padding: isMobile ? '10px 12px' : '12px 24px',
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 16,
+        gap: isMobile ? 8 : 16,
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>{meta?.icon}</span>
           <div>
             <h1 style={{
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: 600,
               color: 'var(--text-primary)',
               lineHeight: 1.2,
@@ -156,7 +165,12 @@ export function ExplorePage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'wrap',
+        }}>
           {/* Type filters */}
           {(['decision', 'fact', 'convention', 'state'] as const).map(type => {
             const isActive = activeTypes.includes(type);
@@ -172,7 +186,7 @@ export function ExplorePage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
-                  padding: '4px 10px',
+                  padding: isMobile ? '6px 10px' : '4px 10px',
                   borderRadius: 'var(--radius)',
                   fontSize: 11,
                   fontWeight: 500,
@@ -181,6 +195,7 @@ export function ExplorePage() {
                   background: isActive ? `color-mix(in srgb, ${color} 12%, transparent)` : 'transparent',
                   border: `1px solid ${isActive ? color : 'var(--border)'}`,
                   transition: 'all var(--transition)',
+                  minHeight: 44,
                 }}
               >
                 <span style={{
@@ -201,12 +216,13 @@ export function ExplorePage() {
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              padding: '4px 10px',
+              padding: isMobile ? '6px 10px' : '4px 10px',
               borderRadius: 'var(--radius)',
               fontSize: 11,
               color: sidebarOpen ? 'var(--accent)' : 'var(--text-muted)',
               background: sidebarOpen ? 'var(--accent-dim)' : 'transparent',
               border: `1px solid ${sidebarOpen ? 'var(--accent)' : 'var(--border)'}`,
+              minHeight: 44,
             }}
           >
             <Filter size={12} />
@@ -216,33 +232,98 @@ export function ExplorePage() {
       </div>
 
       {/* Timeline */}
-      <Timeline
-        traces={filteredTraces}
-        onTraceClick={handleTimelineClick}
-        activeTraceId={expandedTraceId || undefined}
-      />
+      <div style={{
+        overflowX: isMobile ? 'auto' : 'hidden',
+        WebkitOverflowScrolling: 'touch',
+      }}>
+        <div style={{ minWidth: isMobile ? 600 : undefined }}>
+          <Timeline
+            traces={filteredTraces}
+            onTraceClick={handleTimelineClick}
+            activeTraceId={expandedTraceId || undefined}
+          />
+        </div>
+      </div>
 
       {/* Main content */}
       <div style={{
         flex: 1,
         display: 'flex',
         overflow: 'hidden',
+        position: 'relative',
       }}>
+        {/* Mobile sidebar backdrop */}
+        {isMobile && sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 140,
+              background: 'rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(4px)',
+            }}
+          />
+        )}
+
         {/* Sidebar */}
         {sidebarOpen && (
-          <TagTree
-            tagGroups={tagGroups}
-            tagCounts={tagCounts}
-            activeTags={activeTags}
-            onToggleTag={handleToggleTag}
-          />
+          <div style={isMobile ? {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            bottom: 0,
+            zIndex: 150,
+            width: 280,
+            maxWidth: '85vw',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+          } : undefined}>
+            {isMobile && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderBottom: '1px solid var(--border)',
+                background: 'var(--bg-secondary)',
+              }}>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                }}>Filter by tag</span>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 'var(--radius)',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+            <TagTree
+              tagGroups={tagGroups}
+              tagCounts={tagCounts}
+              activeTags={activeTags}
+              onToggleTag={handleToggleTag}
+            />
+          </div>
         )}
 
         {/* Trace grid */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
-          padding: 20,
+          padding: isMobile ? 12 : 20,
         }}>
           {filteredTraces.length === 0 ? (
             <div style={{
@@ -265,7 +346,9 @@ export function ExplorePage() {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+              gridTemplateColumns: isMobile
+                ? '1fr'
+                : 'repeat(auto-fill, minmax(340px, 1fr))',
               gap: 12,
               alignItems: 'start',
             }}>

@@ -122,6 +122,7 @@ export function TagTree({ tagGroups, tagCounts, activeTags, onToggleTag }: TagTr
       padding: '12px 8px',
       overflowY: 'auto',
       background: 'var(--bg-secondary)',
+      flex: 1,
     }}>
       <div style={{
         padding: '4px 8px 12px',
