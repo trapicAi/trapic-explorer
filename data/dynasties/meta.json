@@ -1,0 +1,26 @@
+{
+  "id": "dynasties",
+  "name": "中國朝代",
+  "description": "五千年中華文明的朝代更迭、重大決策與歷史轉折",
+  "icon": "🏯",
+  "tag_taxonomy": {
+    "朝代": {
+      "label": "朝代",
+      "values": ["夏商周", "秦漢", "魏晉南北朝", "隋唐", "宋元", "明清", "近現代"]
+    },
+    "類型": {
+      "label": "類型",
+      "values": ["政治", "軍事", "經濟", "文化", "外交"]
+    },
+    "地區": {
+      "label": "地區",
+      "values": ["中原", "江南", "北方", "西域", "東北"]
+    }
+  },
+  "categories": [
+    { "slug": "ancient", "name": "先秦至秦漢", "path": "ancient.json", "trace_count": 25 },
+    { "slug": "middle", "name": "三國至隋唐", "path": "middle.json", "trace_count": 25 },
+    { "slug": "late", "name": "宋元明清", "path": "late.json", "trace_count": 25 },
+    { "slug": "modern", "name": "近現代", "path": "modern.json", "trace_count": 15 }
+  ]
+}

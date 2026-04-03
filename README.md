@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# Trapic Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interactive knowledge trace visualization. Browse historical events structured as causal chains of decisions, facts, conventions, and state changes.
 
-Currently, two official plugins are available:
+Live at: [trapic.ai/trapic-explorer](https://trapic.ai/trapic-explorer/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+Trapic Explorer renders curated datasets as explorable timelines. Each trace is a discrete historical event with:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **type** — `decision`, `fact`, `convention`, or `state`
+- **caused_by** — references to parent traces, forming causal chains
+- **tags** — categorization (era, region, domain)
+- **confidence** — `high`, `medium`, or `low`
 
-## Expanding the ESLint configuration
+Users can filter by tags and types, search by keyword, and follow causal chains to see how events connect across time.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Datasets
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Datasets live in `data/`. Each dataset has:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+data/<dataset>/
+  meta.json          # name, icon, tag taxonomy, category list
+  <category>.json    # array of ExplorerTrace objects
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+See `src/types/trace.ts` for the full `ExplorerTrace` schema.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Current datasets:
+- **Wars & Conflicts** — WW1, WW2, Greco-Persian Wars, Vietnam War
+- **Chinese Dynasties** — 5,000 years from Xia to modern era (Traditional Chinese)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Running locally
+
+```bash
+npm install
+npm run dev
 ```
+
+Build for production:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Tech stack
+
+- React 19 + TypeScript + Vite
+- React Router for client-side routing
+- Lucide React for icons
+- CSS custom properties for theming (light/dark)
+- Deployed on Cloudflare Pages
+
+## License
+
+MIT

@@ -20,19 +20,21 @@ export function ExplorePage() {
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
   const [expandedTraceId, setExpandedTraceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (!dataset) return;
     setLoading(true);
+    setError(null);
     Promise.all([
       loadAllTraces(dataset),
       getDatasetMeta(dataset),
     ]).then(([traces, m]) => {
       setAllTraces(traces);
       setMeta(m);
-    }).catch(err => {
-      console.error('Failed to load traces:', err);
+    }).catch(() => {
+      setError('Failed to load traces. Please try refreshing the page.');
     }).finally(() => {
       setLoading(false);
     });
@@ -91,6 +93,36 @@ export function ExplorePage() {
         color: 'var(--text-muted)',
       }}>
         Loading traces...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        color: 'var(--text-muted)',
+        padding: 40,
+      }}>
+        <p style={{ fontSize: 15 }}>{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            fontSize: 13,
+            color: 'var(--accent)',
+            textDecoration: 'underline',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Reload page
+        </button>
       </div>
     );
   }

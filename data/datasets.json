@@ -3,7 +3,14 @@
     "id": "wars",
     "name": "Wars & Conflicts",
     "description": "5,000 years of military history structured as knowledge traces",
-    "icon": "\u2694\ufe0f",
-    "trace_count": 0
+    "icon": "⚔️",
+    "trace_count": 99
+  },
+  {
+    "id": "dynasties",
+    "name": "中國朝代",
+    "description": "五千年中華文明的朝代更迭、重大決策與歷史轉折",
+    "icon": "🏯",
+    "trace_count": 91
   }
 ]

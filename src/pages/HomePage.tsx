@@ -120,7 +120,7 @@ function ChainPreview({ chain, datasetId }: { chain: ExplorerTrace[]; datasetId:
       })}
       {chain.length > 6 && (
         <Link
-          to={`/d/${datasetId}/chain/ww2-001`}
+          to={`/d/${datasetId}/chain/${chain[0]?.id || ''}`}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -144,6 +144,7 @@ export function HomePage() {
   const [traceCount, setTraceCount] = useState(0);
   const [featuredChain, setFeaturedChain] = useState<ExplorerTrace[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -155,8 +156,8 @@ export function HomePage() {
         // Get the WW1->WW2 chain starting from Treaty of Versailles
         const chain = getChainForTrace('ww2-001');
         setFeaturedChain(chain);
-      } catch (err) {
-        console.error('Failed to load data:', err);
+      } catch {
+        setError('Failed to load datasets. Please try refreshing the page.');
       } finally {
         setLoading(false);
       }
@@ -174,6 +175,36 @@ export function HomePage() {
         color: 'var(--text-muted)',
       }}>
         Loading knowledge traces...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        color: 'var(--text-muted)',
+        padding: 40,
+      }}>
+        <p style={{ fontSize: 15 }}>{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            fontSize: 13,
+            color: 'var(--accent)',
+            textDecoration: 'underline',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Reload page
+        </button>
       </div>
     );
   }
@@ -399,7 +430,7 @@ export function HomePage() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
           gap: 16,
         }}>
           {datasets.map(ds => (
