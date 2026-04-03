@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, GitBranch, Database, Layers } from 'lucide-react';
-import { getDatasets, loadAllTraces, getChainForTrace } from '@/lib/data';
-import type { ExplorerTrace } from '@/types/trace';
-import { getTypeColor } from '@/lib/data';
+import { useState, useEffect, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Search, Layers } from 'lucide-react';
+import { getDatasets, loadAllTraces } from '@/lib/data';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 function AnimatedCounter({ target, label, delay }: { target: string; label: string; delay: number }) {
@@ -18,11 +16,12 @@ function AnimatedCounter({ target, label, delay }: { target: string; label: stri
       textAlign: 'center',
       opacity: visible ? 1 : 0,
       transform: visible ? 'translateY(0)' : 'translateY(12px)',
-      transition: 'all 0.5s ease',
+      transition: 'all 0.6s ease',
     }}>
       <div style={{
-        fontSize: 40,
+        fontSize: 36,
         fontWeight: 700,
+        fontFamily: 'var(--font-mono)',
         letterSpacing: '-0.03em',
         color: 'var(--text-primary)',
         lineHeight: 1.1,
@@ -30,11 +29,11 @@ function AnimatedCounter({ target, label, delay }: { target: string; label: stri
         {target}
       </div>
       <div style={{
-        fontSize: 13,
+        fontSize: 11,
         color: 'var(--text-muted)',
         marginTop: 4,
         textTransform: 'uppercase',
-        letterSpacing: '0.08em',
+        letterSpacing: '0.1em',
         fontWeight: 500,
       }}>
         {label}
@@ -43,110 +42,15 @@ function AnimatedCounter({ target, label, delay }: { target: string; label: stri
   );
 }
 
-function formatYear(year: number): string {
-  if (year < 0) return `${Math.abs(year)} BC`;
-  return `${year}`;
-}
-
-function ChainPreview({ chain, datasetId }: { chain: ExplorerTrace[]; datasetId: string }) {
-  const preview = chain.slice(0, 6);
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 0,
-    }}>
-      {preview.map((trace, i) => {
-        const typeColor = getTypeColor(trace.type);
-        return (
-          <div
-            key={trace.id}
-            className="animate-fade-in"
-            style={{ animationDelay: `${800 + i * 100}ms`, animationFillMode: 'backwards' }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '8px 0',
-            }}>
-              {/* Dot + line */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                width: 20,
-              }}>
-                <div style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: typeColor,
-                  boxShadow: `0 0 8px ${typeColor}`,
-                  flexShrink: 0,
-                }} />
-              </div>
-              {/* Content */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 13,
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.4,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {trace.content}
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: 'var(--text-muted)',
-                  marginTop: 2,
-                }}>
-                  {formatYear(trace.year_numeric)}
-                </div>
-              </div>
-            </div>
-            {/* Connector */}
-            {i < preview.length - 1 && (
-              <div style={{
-                marginLeft: 9,
-                width: 2,
-                height: 8,
-                background: `linear-gradient(to bottom, ${typeColor}, ${getTypeColor(preview[i + 1].type)})`,
-              }} />
-            )}
-          </div>
-        );
-      })}
-      {chain.length > 6 && (
-        <Link
-          to={`/d/${datasetId}/chain/${chain[0]?.id || ''}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 0 0',
-            fontSize: 12,
-            color: 'var(--accent)',
-          }}
-        >
-          <GitBranch size={12} />
-          View full chain ({chain.length} traces)
-          <ArrowRight size={12} />
-        </Link>
-      )}
-    </div>
-  );
-}
-
 export function HomePage() {
   const [datasets, setDatasets] = useState<{ id: string; name: string; description: string; icon: string }[]>([]);
   const [traceCount, setTraceCount] = useState(0);
-  const [featuredChain, setFeaturedChain] = useState<ExplorerTrace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
@@ -155,9 +59,6 @@ export function HomePage() {
         setDatasets(ds);
         const traces = await loadAllTraces('wars');
         setTraceCount(traces.length);
-        // Get the WW1->WW2 chain starting from Treaty of Versailles
-        const chain = getChainForTrace('ww2-001');
-        setFeaturedChain(chain);
       } catch {
         setError('Failed to load datasets. Please try refreshing the page.');
       } finally {
@@ -166,6 +67,13 @@ export function HomePage() {
     }
     load();
   }, []);
+
+  function handleSearch(e: FormEvent) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/d/wars?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  }
 
   if (loading) {
     return (
@@ -215,120 +123,156 @@ export function HomePage() {
     <div style={{ flex: 1 }}>
       {/* Hero */}
       <section style={{
-        padding: isMobile ? '48px 16px 40px' : '80px 24px 60px',
+        padding: isMobile ? '60px 16px 48px' : '100px 24px 72px',
         textAlign: 'center',
-        background: `radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 70%)`,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        {/* Background glow */}
         <div style={{
-          maxWidth: 720,
-          margin: '0 auto',
-        }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '4px 14px',
-            borderRadius: 20,
-            fontSize: 12,
-            fontWeight: 500,
-            color: 'var(--accent)',
-            background: 'var(--accent-dim)',
-            border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
-            marginBottom: 24,
-          }}>
-            <Database size={12} />
-            Knowledge trace explorer
-          </div>
+          position: 'absolute',
+          inset: 0,
+          background: `
+            radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 79, 56, 0.06) 0%, transparent 70%),
+            radial-gradient(ellipse 40% 30% at 30% 20%, rgba(129, 140, 248, 0.04) 0%, transparent 70%),
+            radial-gradient(ellipse 40% 30% at 70% 20%, rgba(74, 222, 128, 0.03) 0%, transparent 70%)
+          `,
+          pointerEvents: 'none',
+        }} />
 
+        <div style={{
+          maxWidth: 780,
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 1,
+        }}>
           <h1 style={{
-            fontSize: isMobile ? 32 : 48,
-            fontWeight: 700,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.15,
+            fontSize: isMobile ? 28 : 52,
+            fontWeight: 800,
+            letterSpacing: '-0.04em',
+            lineHeight: 1.1,
             color: 'var(--text-primary)',
             marginBottom: 16,
+            textTransform: 'uppercase',
           }}>
-            Explore history as
+            Trace History as
             <br />
-            <span style={{ color: 'var(--accent)' }}>causal knowledge</span>
+            <span style={{
+              background: 'linear-gradient(135deg, var(--accent), #ff8c75)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              Causal Knowledge
+            </span>
           </h1>
 
           <p style={{
-            fontSize: isMobile ? 15 : 17,
-            lineHeight: 1.6,
+            fontSize: isMobile ? 14 : 16,
+            lineHeight: 1.7,
             color: 'var(--text-secondary)',
-            maxWidth: 540,
-            margin: '0 auto 40px',
+            maxWidth: 560,
+            margin: '0 auto 36px',
           }}>
-            Decisions, facts, conventions, and state changes — connected through
-            causal chains that reveal how events shape history.
+            Understand how events shape and connect our world,
+            driven by AI-powered causal reasoning.
           </p>
 
-          {/* Stats */}
+          {/* Search bar */}
+          <form
+            onSubmit={handleSearch}
+            style={{
+              maxWidth: 600,
+              margin: '0 auto 32px',
+              position: 'relative',
+            }}
+          >
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              background: 'var(--glass-bg)',
+              backdropFilter: 'blur(var(--glass-blur))',
+              WebkitBackdropFilter: 'blur(var(--glass-blur))',
+              border: `1px solid ${searchFocused ? 'var(--accent)' : 'var(--glass-border)'}`,
+              borderRadius: 16,
+              transition: 'all 0.3s ease',
+              boxShadow: searchFocused
+                ? '0 0 0 3px rgba(255, 79, 56, 0.1), 0 8px 32px rgba(0,0,0,0.3)'
+                : '0 4px 24px rgba(0,0,0,0.2)',
+            }}>
+              <Search size={18} style={{
+                position: 'absolute',
+                left: 18,
+                color: searchFocused ? 'var(--accent)' : 'var(--text-muted)',
+                transition: 'color 0.2s',
+                pointerEvents: 'none',
+              }} />
+              <input
+                type="text"
+                placeholder="Search historical traces (e.g., 'Treaty of Nanking')..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                style={{
+                  width: '100%',
+                  height: isMobile ? 52 : 56,
+                  padding: '0 120px 0 48px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  fontSize: isMobile ? 14 : 15,
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  position: 'absolute',
+                  right: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '10px 20px',
+                  borderRadius: 12,
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  transition: 'all var(--transition)',
+                  boxShadow: '0 2px 8px rgba(255, 79, 56, 0.3)',
+                }}
+              >
+                Search
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </form>
+
+          {/* Stats row */}
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: isMobile ? 24 : 48,
-            marginBottom: 40,
+            gap: isMobile ? 28 : 56,
             flexWrap: 'wrap',
           }}>
             <AnimatedCounter target={`${traceCount}+`} label="Traces" delay={200} />
+            <div style={{
+              width: 1,
+              alignSelf: 'stretch',
+              background: 'var(--border)',
+              opacity: 0.5,
+            }} />
             <AnimatedCounter target="4" label="Conflicts" delay={400} />
+            <div style={{
+              width: 1,
+              alignSelf: 'stretch',
+              background: 'var(--border)',
+              opacity: 0.5,
+            }} />
             <AnimatedCounter target="5,000" label="Years" delay={600} />
           </div>
-
-          <Link
-            to="/d/wars"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '12px 28px',
-              borderRadius: 'var(--radius)',
-              background: 'var(--accent)',
-              color: '#fff',
-              fontSize: 15,
-              fontWeight: 600,
-              textDecoration: 'none',
-              transition: 'all var(--transition)',
-              boxShadow: '0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 24px color-mix(in srgb, var(--accent) 40%, transparent)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent)';
-            }}
-          >
-            Start Exploring
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
-
-      {/* Featured chain */}
-      <section style={{
-        maxWidth: 1100,
-        margin: '0 auto',
-        padding: isMobile ? '24px 16px 40px' : '40px 24px 60px',
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gap: isMobile ? 24 : 40,
-        alignItems: 'start',
-      }}>
-        <div>
-        </div>
-
-        <div style={{
-          background: 'var(--bg-secondary)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '20px 24px',
-          boxShadow: 'var(--shadow)',
-        }}>
-          <ChainPreview chain={featuredChain} datasetId="wars" />
         </div>
       </section>
 
@@ -336,18 +280,29 @@ export function HomePage() {
       <section style={{
         maxWidth: 1100,
         margin: '0 auto',
-        padding: isMobile ? '0 16px 40px' : '0 24px 60px',
+        padding: isMobile ? '0 16px 48px' : '0 24px 72px',
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          marginBottom: 24,
+          gap: 10,
+          marginBottom: 28,
         }}>
-          <Layers size={16} style={{ color: 'var(--accent)' }} />
+          <div style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--accent-dim)',
+            border: '1px solid rgba(255, 79, 56, 0.2)',
+          }}>
+            <Layers size={16} style={{ color: 'var(--accent)' }} />
+          </div>
           <h2 style={{
-            fontSize: 20,
-            fontWeight: 600,
+            fontSize: 22,
+            fontWeight: 700,
             color: 'var(--text-primary)',
             letterSpacing: '-0.02em',
           }}>
@@ -357,58 +312,63 @@ export function HomePage() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
           gap: 16,
         }}>
           {datasets.map(ds => (
             <Link
               key={ds.id}
               to={`/d/${ds.id}`}
+              className="glass-card"
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 16,
-                padding: '20px 24px',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
+                padding: '24px',
                 textDecoration: 'none',
-                transition: 'all var(--transition)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--accent)';
-                e.currentTarget.style.boxShadow = 'var(--shadow)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'none';
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
-              <span style={{ fontSize: 32 }}>{ds.icon}</span>
-              <div>
+              {/* Subtle gradient accent on left */}
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                background: 'linear-gradient(to bottom, var(--accent), transparent)',
+                opacity: 0.5,
+              }} />
+              <span style={{ fontSize: 36, lineHeight: 1 }}>{ds.icon}</span>
+              <div style={{ flex: 1 }}>
                 <h3 style={{
-                  fontSize: 16,
+                  fontSize: 17,
                   fontWeight: 600,
                   color: 'var(--text-primary)',
-                  marginBottom: 4,
+                  marginBottom: 6,
                 }}>
                   {ds.name}
                 </h3>
                 <p style={{
                   fontSize: 13,
                   color: 'var(--text-secondary)',
-                  lineHeight: 1.5,
-                  marginBottom: 8,
+                  lineHeight: 1.6,
+                  marginBottom: 12,
                 }}>
                   {ds.description}
                 </p>
                 <div style={{
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 4,
+                  gap: 6,
                   fontSize: 12,
                   color: 'var(--accent)',
-                  fontWeight: 500,
+                  fontWeight: 600,
+                  padding: '4px 12px',
+                  borderRadius: 6,
+                  background: 'var(--accent-dim)',
+                  border: '1px solid rgba(255, 79, 56, 0.2)',
                 }}>
                   Explore
                   <ArrowRight size={12} />

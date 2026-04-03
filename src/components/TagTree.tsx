@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 
 interface TagTreeProps {
@@ -10,12 +10,14 @@ interface TagTreeProps {
 
 function TagGroup({
   prefix,
+  label,
   values,
   tagCounts,
   activeTags,
   onToggleTag,
 }: {
   prefix: string;
+  label: string;
   values: string[];
   tagCounts: Record<string, number>;
   activeTags: string[];
@@ -36,23 +38,24 @@ function TagGroup({
           padding: '6px 8px',
           borderRadius: 'var(--radius)',
           color: 'var(--text-secondary)',
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 600,
           textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.06em',
           transition: 'background var(--transition)',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span style={{ flex: 1, textAlign: 'left' }}>{prefix}</span>
-        <span style={{
+        <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+        <span className="mono" style={{
           fontSize: 10,
           color: 'var(--text-muted)',
           background: 'var(--bg-tertiary)',
           padding: '1px 6px',
           borderRadius: 10,
+          fontWeight: 500,
         }}>
           {totalCount}
         </span>
@@ -74,7 +77,7 @@ function TagGroup({
                   alignItems: 'center',
                   gap: 6,
                   width: '100%',
-                  padding: '4px 8px',
+                  padding: '5px 8px',
                   borderRadius: 'var(--radius)',
                   fontSize: 13,
                   color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
@@ -97,10 +100,11 @@ function TagGroup({
                   flexShrink: 0,
                   transition: 'background var(--transition)',
                 }} />
-                <span style={{ flex: 1 }}>{value}</span>
-                <span style={{
+                <span style={{ flex: 1, textTransform: 'capitalize' }}>{value}</span>
+                <span className="mono" style={{
                   fontSize: 10,
                   color: 'var(--text-muted)',
+                  fontWeight: 500,
                 }}>
                   {count}
                 </span>
@@ -113,7 +117,39 @@ function TagGroup({
   );
 }
 
+// Derive impact from tags: if tag contains "global", "world", "international" -> Global
+// "regional", "european", "asian" -> Regional, else Local
+function deriveImpact(tags: string[]): 'global' | 'regional' | 'local' {
+  const joined = tags.join(' ').toLowerCase();
+  if (joined.includes('global') || joined.includes('world') || joined.includes('international')) return 'global';
+  if (joined.includes('regional') || joined.includes('european') || joined.includes('asian') || joined.includes('african') || joined.includes('american')) return 'regional';
+  return 'local';
+}
+
 export function TagTree({ tagGroups, tagCounts, activeTags, onToggleTag }: TagTreeProps) {
+  // Build special groups: EPOCH, TYPE (already in header), IMPACT
+  const epochGroup = tagGroups['epoch'] || [];
+  const otherGroups = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    for (const [prefix, values] of Object.entries(tagGroups)) {
+      if (prefix === 'epoch') continue;
+      result[prefix] = values;
+    }
+    return result;
+  }, [tagGroups]);
+
+  // Compute impact counts from all tags in tagCounts
+  const impactCounts = useMemo(() => {
+    const counts: Record<string, number> = { global: 0, regional: 0, local: 0 };
+    // Approximate from tag prefixes
+    for (const [tag, count] of Object.entries(tagCounts)) {
+      const impact = deriveImpact([tag]);
+      if (impact === 'global') counts['global'] += count;
+      else if (impact === 'regional') counts['regional'] += count;
+    }
+    return counts;
+  }, [tagCounts]);
+
   return (
     <div style={{
       width: 240,
@@ -125,14 +161,14 @@ export function TagTree({ tagGroups, tagCounts, activeTags, onToggleTag }: TagTr
       flex: 1,
     }}>
       <div style={{
-        padding: '4px 8px 12px',
+        padding: '4px 8px 14px',
         fontSize: 11,
-        fontWeight: 600,
+        fontWeight: 700,
         color: 'var(--text-muted)',
         textTransform: 'uppercase',
-        letterSpacing: '0.08em',
+        letterSpacing: '0.1em',
       }}>
-        Filter by tag
+        Filter by Tag
       </div>
 
       {activeTags.length > 0 && (
@@ -160,6 +196,7 @@ export function TagTree({ tagGroups, tagCounts, activeTags, onToggleTag }: TagTr
                   background: 'var(--accent-dim)',
                   color: 'var(--accent)',
                   border: '1px solid var(--accent)',
+                  fontWeight: 500,
                 }}
               >
                 {tag}
@@ -170,10 +207,68 @@ export function TagTree({ tagGroups, tagCounts, activeTags, onToggleTag }: TagTr
         </div>
       )}
 
-      {Object.entries(tagGroups).map(([prefix, values]) => (
+      {/* Epoch group first if available */}
+      {epochGroup.length > 0 && (
+        <TagGroup
+          prefix="epoch"
+          label="Epoch"
+          values={epochGroup}
+          tagCounts={tagCounts}
+          activeTags={activeTags}
+          onToggleTag={onToggleTag}
+        />
+      )}
+
+      {/* Impact section */}
+      {(impactCounts.global > 0 || impactCounts.regional > 0) && (
+        <div style={{ marginBottom: 4 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '6px 8px',
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: 'var(--text-secondary)',
+          }}>
+            Impact
+          </div>
+          <div style={{ paddingLeft: 12 }}>
+            {['global', 'regional', 'local'].map(level => (
+              <div
+                key={level}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 8px',
+                  fontSize: 13,
+                  color: 'var(--text-secondary)',
+                  textTransform: 'capitalize',
+                }}
+              >
+                <span style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: level === 'global' ? 'var(--decision)' : level === 'regional' ? 'var(--fact)' : 'var(--convention)',
+                  flexShrink: 0,
+                }} />
+                <span style={{ flex: 1 }}>{level}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Other tag groups */}
+      {Object.entries(otherGroups).map(([prefix, values]) => (
         <TagGroup
           key={prefix}
           prefix={prefix}
+          label={prefix}
           values={values}
           tagCounts={tagCounts}
           activeTags={activeTags}

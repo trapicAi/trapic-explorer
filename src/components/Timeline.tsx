@@ -40,17 +40,45 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
 
   return (
     <div style={{
-      background: 'var(--bg-secondary)',
-      borderBottom: '1px solid var(--border)',
-      padding: '16px 24px 8px',
+      background: 'var(--glass-bg)',
+      backdropFilter: 'blur(var(--glass-blur))',
+      WebkitBackdropFilter: 'blur(var(--glass-blur))',
+      borderTop: '1px solid var(--glass-border)',
+      borderBottom: '1px solid var(--glass-border)',
+      padding: '20px 24px 12px',
       overflow: 'hidden',
     }}>
+      {/* Section label */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+      }}>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+        }}>
+          Timeline
+        </div>
+        <div className="mono" style={{
+          fontSize: 10,
+          color: 'var(--text-muted)',
+          fontWeight: 500,
+        }}>
+          {traces.length} traces
+        </div>
+      </div>
+
       <div
         ref={containerRef}
         style={{
           position: 'relative',
-          height: 56,
-          marginBottom: 4,
+          height: 64,
+          marginBottom: 6,
         }}
       >
         {/* Era background segments */}
@@ -65,10 +93,10 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
                 left: `${left}%`,
                 width: `${right - left}%`,
                 top: 0,
-                height: 32,
-                background: era.color,
-                opacity: 0.25,
-                borderRadius: 4,
+                height: 36,
+                background: `linear-gradient(135deg, ${era.color}, transparent)`,
+                opacity: 0.3,
+                borderRadius: 6,
               }}
             />
           );
@@ -77,17 +105,19 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
         {/* Timeline axis */}
         <div style={{
           position: 'absolute',
-          top: 15,
+          top: 17,
           left: 0,
           right: 0,
           height: 2,
           background: 'var(--border)',
+          borderRadius: 1,
         }} />
 
         {/* Trace dots */}
         {traces.map((trace, i) => {
           const pos = getPosition(trace.year_numeric);
           const isActive = trace.id === activeTraceId;
+          const dotColor = getTypeColor(trace.type);
           return (
             <button
               key={trace.id}
@@ -96,17 +126,17 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
               style={{
                 position: 'absolute',
                 left: `${pos}%`,
-                top: isActive ? 8 : 10,
-                width: isActive ? 14 : 10,
-                height: isActive ? 14 : 10,
+                top: isActive ? 8 : 11,
+                width: isActive ? 16 : 10,
+                height: isActive ? 16 : 10,
                 borderRadius: '50%',
-                background: getTypeColor(trace.type),
+                background: dotColor,
                 border: isActive ? '2px solid var(--text-primary)' : '2px solid var(--bg-secondary)',
                 transform: 'translateX(-50%)',
                 cursor: 'pointer',
                 transition: 'all var(--transition)',
                 zIndex: isActive ? 10 : traces.length - i,
-                boxShadow: isActive ? `0 0 12px ${getTypeColor(trace.type)}` : 'none',
+                boxShadow: isActive ? `0 0 16px ${dotColor}, 0 0 4px ${dotColor}` : 'none',
               }}
             />
           );
@@ -115,7 +145,7 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
         {/* Era labels */}
         <div style={{
           position: 'absolute',
-          top: 36,
+          top: 40,
           left: 0,
           right: 0,
           display: 'flex',
@@ -132,13 +162,14 @@ export function Timeline({ traces, onTraceClick, activeTraceId }: TimelineProps)
                   width: `${right - left}%`,
                   textAlign: 'center',
                   fontSize: 10,
-                  fontWeight: 500,
+                  fontWeight: 600,
                   color: 'var(--text-muted)',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '0.06em',
                   textTransform: 'uppercase',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 {era.label}

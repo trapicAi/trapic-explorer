@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import type { ExplorerTrace } from '@/types/trace';
 import { getTypeColor, getCausesCount, getEffectsCount } from '@/lib/data';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, Crosshair, BarChart3, BookOpen, Zap } from 'lucide-react';
 
 interface TraceCardProps {
   trace: ExplorerTrace;
   datasetId: string;
   isExpanded?: boolean;
   onExpand?: () => void;
+  isTracePath?: boolean;
 }
 
 function formatYear(year: number): string {
@@ -15,7 +16,37 @@ function formatYear(year: number): string {
   return `${year}`;
 }
 
-export function TraceCard({ trace, datasetId, isExpanded, onExpand }: TraceCardProps) {
+function getTypeIcon(type: string) {
+  switch (type) {
+    case 'decision': return <Crosshair size={13} />;
+    case 'fact': return <BarChart3 size={13} />;
+    case 'convention': return <BookOpen size={13} />;
+    case 'state': return <Zap size={13} />;
+    default: return null;
+  }
+}
+
+function getBadgeClass(type: string): string {
+  switch (type) {
+    case 'decision': return 'badge-decision';
+    case 'fact': return 'badge-fact';
+    case 'convention': return 'badge-convention';
+    case 'state': return 'badge-state';
+    default: return '';
+  }
+}
+
+function getGlowClass(type: string): string {
+  switch (type) {
+    case 'decision': return 'glow-decision';
+    case 'fact': return 'glow-fact';
+    case 'convention': return 'glow-convention';
+    case 'state': return 'glow-state';
+    default: return '';
+  }
+}
+
+export function TraceCard({ trace, datasetId, isExpanded, onExpand, isTracePath }: TraceCardProps) {
   const causes = getCausesCount(trace.id);
   const effects = getEffectsCount(trace.id);
   const typeColor = getTypeColor(trace.type);
@@ -24,95 +55,99 @@ export function TraceCard({ trace, datasetId, isExpanded, onExpand }: TraceCardP
     <div
       id={`trace-${trace.id}`}
       onClick={onExpand}
-      className="animate-fade-in"
+      className={`animate-fade-in glass-card${isExpanded || isTracePath ? ` ${getGlowClass(trace.type)}` : ''}`}
       style={{
         position: 'relative',
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'all var(--transition)',
-        boxShadow: isExpanded ? 'var(--shadow)' : 'none',
+        borderColor: isExpanded || isTracePath ? typeColor : undefined,
+        overflow: 'hidden',
       }}
       onMouseEnter={e => {
-        if (!isExpanded) e.currentTarget.style.borderColor = typeColor;
+        if (!isExpanded) {
+          e.currentTarget.style.borderColor = typeColor;
+          e.currentTarget.classList.add(getGlowClass(trace.type));
+        }
       }}
       onMouseLeave={e => {
-        if (!isExpanded) e.currentTarget.style.borderColor = 'var(--border)';
+        if (!isExpanded && !isTracePath) {
+          e.currentTarget.style.borderColor = '';
+          e.currentTarget.classList.remove(getGlowClass(trace.type));
+        }
       }}
     >
-      {/* Left color bar */}
-      <div style={{
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: 4,
-        background: typeColor,
-      }} />
-
-      <div style={{ padding: '14px 16px 14px 20px' }}>
-        {/* Header row */}
+      <div style={{ padding: '16px 18px' }}>
+        {/* Header row: type badge + causal counts */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 8,
-          gap: 12,
+          alignItems: 'center',
+          marginBottom: 12,
+          gap: 8,
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}>
-            <span style={{
-              display: 'inline-block',
-              padding: '2px 8px',
-              borderRadius: 4,
+          <span
+            className={getBadgeClass(trace.type)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '4px 10px',
+              borderRadius: 6,
               fontSize: 10,
               fontWeight: 600,
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: typeColor,
-              background: `color-mix(in srgb, ${typeColor} 12%, transparent)`,
-            }}>
-              {trace.type}
-            </span>
-            {trace.confidence !== 'high' && (
-              <span style={{
-                fontSize: 10,
-                color: trace.confidence === 'medium' ? 'var(--confidence-medium)' : 'var(--confidence-low)',
-              }}>
-                {trace.confidence}
-              </span>
-            )}
-          </div>
-          <span style={{
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            fontVariantNumeric: 'tabular-nums',
-            flexShrink: 0,
-          }}>
-            {formatYear(trace.year_numeric)}
+              letterSpacing: '0.06em',
+            }}
+          >
+            {getTypeIcon(trace.type)}
+            {trace.type}
           </span>
+          {(causes > 0 || effects > 0) && (
+            <span className="mono" style={{
+              fontSize: 10,
+              color: 'var(--text-muted)',
+              fontWeight: 500,
+            }}>
+              {causes > 0 ? `${causes} cause${causes !== 1 ? 's' : ''}` : ''}
+              {causes > 0 && effects > 0 ? ' / ' : ''}
+              {effects > 0 ? `${effects} effect${effects !== 1 ? 's' : ''}` : ''}
+            </span>
+          )}
         </div>
 
-        {/* Content */}
-        <p style={{
-          fontSize: 14,
-          lineHeight: 1.5,
+        {/* Title */}
+        <h3 style={{
+          fontSize: 15,
+          fontWeight: 600,
+          lineHeight: 1.45,
           color: 'var(--text-primary)',
-          marginBottom: isExpanded ? 10 : 0,
+          marginBottom: 4,
         }}>
           {trace.content}
-        </p>
+        </h3>
+
+        {/* Year */}
+        <div className="mono" style={{
+          fontSize: 11,
+          color: 'var(--text-muted)',
+          marginBottom: isExpanded ? 12 : 0,
+          fontWeight: 500,
+        }}>
+          {formatYear(trace.year_numeric)}
+          {trace.confidence !== 'high' && (
+            <span style={{
+              marginLeft: 8,
+              color: trace.confidence === 'medium' ? 'var(--confidence-medium)' : 'var(--confidence-low)',
+            }}>
+              [{trace.confidence}]
+            </span>
+          )}
+        </div>
 
         {/* Expanded: context */}
         {isExpanded && trace.context && (
           <p style={{
             fontSize: 13,
-            lineHeight: 1.6,
+            lineHeight: 1.65,
             color: 'var(--text-secondary)',
             marginBottom: 12,
             paddingLeft: 12,
@@ -127,23 +162,33 @@ export function TraceCard({ trace, datasetId, isExpanded, onExpand }: TraceCardP
           display: 'flex',
           flexWrap: 'wrap',
           gap: 4,
-          marginTop: 10,
+          marginTop: 12,
         }}>
-          {trace.tags.map(tag => (
+          {trace.tags.slice(0, 5).map(tag => (
             <span
               key={tag}
               style={{
-                padding: '1px 6px',
+                padding: '2px 7px',
                 borderRadius: 4,
                 fontSize: 10,
                 color: 'var(--text-muted)',
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border-subtle)',
+                fontWeight: 500,
               }}
             >
               {tag}
             </span>
           ))}
+          {trace.tags.length > 5 && (
+            <span className="mono" style={{
+              fontSize: 10,
+              color: 'var(--text-muted)',
+              padding: '2px 4px',
+            }}>
+              +{trace.tags.length - 5}
+            </span>
+          )}
         </div>
 
         {/* Causal chain link */}
@@ -152,9 +197,9 @@ export function TraceCard({ trace, datasetId, isExpanded, onExpand }: TraceCardP
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            marginTop: 10,
-            paddingTop: 10,
-            borderTop: '1px solid var(--border-subtle)',
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: '1px solid var(--glass-border)',
           }}>
             <Link
               to={`/d/${datasetId}/chain/${trace.id}`}
@@ -162,23 +207,33 @@ export function TraceCard({ trace, datasetId, isExpanded, onExpand }: TraceCardP
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
+                gap: 6,
                 fontSize: 11,
                 color: 'var(--text-muted)',
                 textDecoration: 'none',
                 transition: 'color var(--transition)',
+                fontWeight: 500,
               }}
               onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; }}
               onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
             >
               <GitBranch size={12} />
-              {causes > 0 && <span>{causes} cause{causes !== 1 ? 's' : ''}</span>}
-              {causes > 0 && effects > 0 && <span style={{ color: 'var(--border)' }}>|</span>}
-              {effects > 0 && <span>{effects} effect{effects !== 1 ? 's' : ''}</span>}
+              View causal chain
             </Link>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* Arrow connector between cards for Trace Path mode */
+export function CausalArrow({ label }: { label: string }) {
+  return (
+    <div className="causal-arrow" style={{ padding: '6px 0' }}>
+      <div className="causal-arrow-line" />
+      <div className="causal-arrow-label">{label}</div>
+      <div className="causal-arrow-head" />
     </div>
   );
 }

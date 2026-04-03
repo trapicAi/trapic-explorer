@@ -1,13 +1,31 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { loadAllTraces, getAllTags, getTagCounts, filterByTags, filterByType, searchTraces, getDatasetMeta } from '@/lib/data';
+import { loadAllTraces, getAllTags, getTagCounts, filterByTags, filterByType, searchTraces, getDatasetMeta, getChainForTrace } from '@/lib/data';
 import type { ExplorerTrace, DatasetMeta } from '@/types/trace';
 import { Timeline } from '@/components/Timeline';
 import { TagTree } from '@/components/TagTree';
-import { TraceCard } from '@/components/TraceCard';
+import { TraceCard, CausalArrow } from '@/components/TraceCard';
 import { TraceDetail } from '@/components/TraceDetail';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, GitBranch, LayoutGrid } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
+
+type ViewMode = 'grid' | 'trace-path';
+
+// Derive a relationship label between two traces
+function getRelationshipLabel(from: ExplorerTrace, to: ExplorerTrace): string {
+  const fromType = from.type;
+  const toType = to.type;
+  if (fromType === 'decision' && toType === 'fact') return 'Triggers';
+  if (fromType === 'decision' && toType === 'state') return 'Triggers';
+  if (fromType === 'fact' && toType === 'decision') return 'Leads to';
+  if (fromType === 'state' && toType === 'decision') return 'Escalates to';
+  if (fromType === 'state' && toType === 'state') return 'Escalates to';
+  if (fromType === 'convention' && toType === 'fact') return 'Mitigates to';
+  if (fromType === 'decision' && toType === 'convention') return 'Establishes';
+  if (toType === 'state') return 'Results in';
+  if (toType === 'decision') return 'Leads to';
+  return 'Causes';
+}
 
 export function ExplorePage() {
   const { dataset } = useParams<{ dataset: string }>();
@@ -24,6 +42,7 @@ export function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Close sidebar when switching to mobile
   useEffect(() => {
@@ -60,6 +79,17 @@ export function ExplorePage() {
     }
     return result;
   }, [allTraces, activeTags, activeTypes, searchQuery]);
+
+  // For trace path mode: build a chain from the first filtered trace
+  const tracePathChain = useMemo(() => {
+    if (viewMode !== 'trace-path' || filteredTraces.length === 0) return [];
+    // Use the first trace that has causal connections
+    const seedTrace = filteredTraces.find(t => t.caused_by.length > 0) || filteredTraces[0];
+    return getChainForTrace(seedTrace.id);
+  }, [viewMode, filteredTraces]);
+
+  // Set of trace IDs in the path chain for highlighting
+  const pathTraceIds = useMemo(() => new Set(tracePathChain.map(t => t.id)), [tracePathChain]);
 
   const handleToggleTag = useCallback((tag: string) => {
     setActiveTags(prev =>
@@ -170,7 +200,7 @@ export function ExplorePage() {
             }}>
               {meta?.name}
             </h1>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
               {filteredTraces.length} of {allTraces.length} traces
               {searchQuery && ` matching "${searchQuery}"`}
             </span>
@@ -222,6 +252,31 @@ export function ExplorePage() {
             );
           })}
 
+          {/* Divider */}
+          <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
+
+          {/* View mode toggle */}
+          <button
+            onClick={() => setViewMode(viewMode === 'grid' ? 'trace-path' : 'grid')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: isMobile ? '6px 10px' : '4px 10px',
+              borderRadius: 'var(--radius)',
+              fontSize: 11,
+              fontWeight: 600,
+              color: viewMode === 'trace-path' ? 'var(--accent)' : 'var(--text-muted)',
+              background: viewMode === 'trace-path' ? 'var(--accent-dim)' : 'transparent',
+              border: `1px solid ${viewMode === 'trace-path' ? 'var(--accent)' : 'var(--border)'}`,
+              minHeight: 44,
+              transition: 'all var(--transition)',
+            }}
+          >
+            {viewMode === 'grid' ? <GitBranch size={12} /> : <LayoutGrid size={12} />}
+            {viewMode === 'grid' ? 'Trace Path' : 'Grid View'}
+          </button>
+
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
@@ -240,20 +295,6 @@ export function ExplorePage() {
             <Filter size={12} />
             Tags
           </button>
-        </div>
-      </div>
-
-      {/* Timeline */}
-      <div style={{
-        overflowX: isMobile ? 'auto' : 'hidden',
-        WebkitOverflowScrolling: 'touch',
-      }}>
-        <div style={{ minWidth: isMobile ? 600 : undefined }}>
-          <Timeline
-            traces={filteredTraces}
-            onTraceClick={handleTimelineClick}
-            activeTraceId={expandedTraceId || undefined}
-          />
         </div>
       </div>
 
@@ -331,7 +372,7 @@ export function ExplorePage() {
           </div>
         )}
 
-        {/* Trace grid */}
+        {/* Trace grid / path */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
@@ -355,7 +396,54 @@ export function ExplorePage() {
                 Clear all filters
               </button>
             </div>
+          ) : viewMode === 'trace-path' && tracePathChain.length > 0 ? (
+            /* Trace Path view: linear chain with arrows */
+            <div style={{
+              maxWidth: 520,
+              margin: '0 auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+            }}>
+              <div style={{
+                padding: '8px 12px',
+                marginBottom: 16,
+                borderRadius: 'var(--radius)',
+                background: 'var(--accent-dim)',
+                border: '1px solid rgba(255, 79, 56, 0.2)',
+                fontSize: 12,
+                color: 'var(--accent)',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}>
+                <GitBranch size={14} />
+                Trace Path — showing causal chain ({tracePathChain.length} connected traces)
+              </div>
+              {tracePathChain.map((trace, i) => (
+                <div key={trace.id}>
+                  <TraceCard
+                    trace={trace}
+                    datasetId={dataset || 'wars'}
+                    isExpanded={expandedTraceId === trace.id}
+                    onExpand={() => setExpandedTraceId(
+                      expandedTraceId === trace.id ? null : trace.id
+                    )}
+                    isTracePath={pathTraceIds.has(trace.id)}
+                  />
+                  {i < tracePathChain.length - 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <CausalArrow
+                        label={getRelationshipLabel(trace, tracePathChain[i + 1])}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
+            /* Grid view */
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile
@@ -373,10 +461,31 @@ export function ExplorePage() {
                   onExpand={() => setExpandedTraceId(
                     expandedTraceId === trace.id ? null : trace.id
                   )}
+                  isTracePath={viewMode === 'trace-path' && pathTraceIds.has(trace.id)}
                 />
               ))}
             </div>
           )}
+
+          {/* Timeline at bottom */}
+          <div style={{
+            marginTop: 32,
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              overflowX: isMobile ? 'auto' : 'hidden',
+              WebkitOverflowScrolling: 'touch',
+            }}>
+              <div style={{ minWidth: isMobile ? 600 : undefined }}>
+                <Timeline
+                  traces={filteredTraces}
+                  onTraceClick={handleTimelineClick}
+                  activeTraceId={expandedTraceId || undefined}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
